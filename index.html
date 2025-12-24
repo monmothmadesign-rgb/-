@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Юридичний радник</title>
+    <title>AI Legal Advisor</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,27 +14,24 @@
                 extend: {
                     colors: {
                         primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            900: '#1e3a8a',
+                            50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a',
                         },
                         dark: {
-                            bg: '#0f172a',
-                            surface: '#1e293b',
-                            border: '#334155'
+                            bg: '#0f172a', surface: '#1e293b', border: '#334155'
                         }
                     },
                     animation: {
                         'fade-in-up': 'fadeInUp 0.3s ease-out',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                     },
                     keyframes: {
                         fadeInUp: {
                             '0%': { opacity: '0', transform: 'translateY(10px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        scaleIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
                         }
                     }
                 }
@@ -47,132 +44,147 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     
-    <!-- Markdown Parser -->
+    <!-- Markdown Parser & Sanitize -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- DOMPurify for security -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
         
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 20px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569;
-        }
-
-        /* Markdown Styles within Chat */
+        /* Markdown Styles */
         .prose a { color: #3b82f6; text-decoration: underline; }
         .dark .prose a { color: #60a5fa; }
-        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-top: 0.5em; margin-bottom: 0.5em; }
-        .prose ol { list-style-type: decimal; padding-left: 1.5em; margin-top: 0.5em; margin-bottom: 0.5em; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin: 0.5em 0; }
+        .prose ol { list-style-type: decimal; padding-left: 1.5em; margin: 0.5em 0; }
         .prose strong { font-weight: 700; color: inherit; }
-        .prose h3 { font-size: 1.1em; font-weight: 700; margin-top: 1em; margin-bottom: 0.5em; }
+        .prose h3 { font-size: 1.1em; font-weight: 700; margin: 1em 0 0.5em 0; }
+        .prose p { margin-bottom: 0.5em; }
         
-        /* Typing indicator dots */
-        .typing-dot {
-            animation: typing 1.4s infinite ease-in-out both;
-        }
+        /* Typing indicator */
+        .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-dark-bg dark:text-gray-100 transition-colors duration-300 h-screen overflow-hidden flex flex-col">
 
     <!-- Header -->
-    <header class="bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border py-4 px-6 flex justify-between items-center shadow-sm z-10 transition-colors duration-300">
-        <div class="flex items-center gap-3">
-            <div class="relative">
+    <header class="bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border py-3 px-4 md:px-6 flex justify-between items-center shadow-sm z-10 transition-colors duration-300 shrink-0">
+        <div class="flex items-center gap-3 overflow-hidden">
+            <div class="relative flex-shrink-0">
                 <div class="absolute inset-0 bg-blue-500 blur opacity-20 rounded-full"></div>
-                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-2.5 rounded-xl shadow-lg relative">
-                    <!-- Main Icon (used in header and as avatar) -->
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-2 rounded-xl shadow-lg relative">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
                     </svg>
                 </div>
             </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
+            <div class="min-w-0">
+                <h1 class="text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight truncate" id="app-title">
                     Юридичний радник
                 </h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">консультація та допомога</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium truncate" id="app-subtitle">консультація та допомога</p>
             </div>
         </div>
 
-        <button id="theme-toggle" class="p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Toggle Theme">
-            <!-- Sun Icon -->
-            <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <!-- Moon Icon -->
-            <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
-        </button>
+        <div class="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+            <!-- Language Toggle -->
+            <button id="lang-toggle" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all focus:outline-none border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                UA
+            </button>
+
+            <!-- Clear History Button -->
+            <button id="clear-chat" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all focus:outline-none" title="Очистити чат">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+            </button>
+
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all focus:outline-none">
+                <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </div>
     </header>
 
     <!-- Chat Area -->
     <main id="chat-container" class="flex-grow overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6 scroll-smooth bg-gray-50 dark:bg-dark-bg">
         
-        <!-- Welcome Message -->
-        <div class="flex flex-col space-y-2 max-w-3xl mx-auto animate-fade-in-up">
+        <!-- Welcome Screen (Shown only if no history) -->
+        <div id="welcome-screen" class="flex flex-col space-y-2 max-w-3xl mx-auto animate-fade-in-up hidden">
             <div class="flex items-end gap-3">
                 <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 text-blue-600 dark:text-blue-400 p-1.5">
-                    <!-- Bot Avatar (Same as Header) -->
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-full h-full">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
                     </svg>
                 </div>
                 <div class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border rounded-2xl rounded-bl-none p-5 shadow-sm max-w-[90%] md:max-w-[80%]">
-                    <h2 class="font-bold text-gray-800 dark:text-white mb-2">Вітаю! Я ваш юридичний радник.</h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                        Я надаю консультації громадян щодо законодавства, використовуючи виключно офіційну базу <strong>zakon.rada.gov.ua</strong>.
+                    <h2 class="font-bold text-gray-800 dark:text-white mb-2" id="welcome-title">Вітаю! Я ваш юридичний радник.</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" id="welcome-text">
+                        Я надаю консультації щодо законодавства, використовуючи виключно офіційну базу <strong>zakon.rada.gov.ua</strong>.
                     </p>
-                    <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <button onclick="setInput('Як подати декларацію, якщо я за кордоном?')" class="text-left text-xs p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-600 dark:text-gray-300 transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-800">
-                            📝 декларування за кордоном
-                        </button>
-                        <button onclick="setInput('Яка відповідальність за хабар?')" class="text-left text-xs p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-600 dark:text-gray-300 transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-800">
-                            ⚖️ відповідальність за хабар
-                        </button>
-                        <button onclick="setInput('Конфлікт інтересів на держслужбі')" class="text-left text-xs p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-600 dark:text-gray-300 transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-800">
-                            🤝 конфлікт інтересів
-                        </button>
-                        <button onclick="setInput('Як повідомити про корупцію анонімно?')" class="text-left text-xs p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-600 dark:text-gray-300 transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-800">
-                            🕵️ анонімне повідомлення
-                        </button>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-3" id="suggestion-buttons">
+                        <!-- Buttons injected via JS -->
                     </div>
                 </div>
             </div>
         </div>
-
+        
+        <!-- Chat history will be injected here -->
     </main>
 
+    <!-- COOL CONFIRMATION MODAL -->
+    <div id="confirmation-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <!-- Backdrop with blur -->
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity opacity-0" id="modal-backdrop"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative bg-white dark:bg-dark-surface rounded-2xl shadow-2xl p-6 w-[90%] max-w-sm transform scale-95 opacity-0 transition-all duration-300" id="modal-content">
+            <div class="flex flex-col items-center text-center">
+                <!-- Warning Icon -->
+                <div class="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4 text-red-500 animate-[bounce_1s_infinite]">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2" id="modal-title">Видалити історію?</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed" id="modal-text">
+                    Ви впевнені, що хочете видалити всю історію листування? Цю дію неможливо скасувати.
+                </p>
+                
+                <div class="flex gap-3 w-full">
+                    <button id="modal-cancel" class="flex-1 py-2.5 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600">
+                        Скасувати
+                    </button>
+                    <button id="modal-confirm" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-medium hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                        Видалити
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Input Area -->
-    <footer class="bg-white dark:bg-dark-surface border-t border-gray-200 dark:border-dark-border p-4 transition-colors duration-300">
+    <footer class="bg-white dark:bg-dark-surface border-t border-gray-200 dark:border-dark-border p-4 transition-colors duration-300 shrink-0">
         <div class="max-w-3xl mx-auto relative">
             <form id="chat-form" class="relative flex items-end gap-2">
                 <div class="relative flex-grow">
                     <textarea 
                         id="user-input" 
                         rows="1"
-                        placeholder="Опишіть вашу ситуацію або запитання..." 
+                        placeholder="Опишіть вашу ситуацію..." 
                         class="w-full bg-gray-100 dark:bg-gray-800 border-0 text-gray-900 dark:text-white rounded-xl py-3.5 pl-4 pr-12 focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-900 transition-all resize-none max-h-32 custom-scrollbar shadow-inner"
                         required
                     ></textarea>
@@ -187,7 +199,7 @@
                     </svg>
                 </button>
             </form>
-            <p class="text-center text-[10px] text-gray-400 dark:text-gray-500 mt-2">
+            <p id="disclaimer-text" class="text-center text-[10px] text-gray-400 dark:text-gray-500 mt-2">
                 Інформація надається виключно для ознайомлення. Перевіряйте дані на <a href="https://zakon.rada.gov.ua" target="_blank" class="underline text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">zakon.rada.gov.ua</a>
             </p>
         </div>
@@ -195,89 +207,240 @@
 
     <script>
         // --- Configuration ---
-        const PROVIDED_KEY = "AIzaSyDEGba9qJWfdt1Ys2MwyonF6UTn6SGTkZQ";
+        const PROVIDED_KEY = "AIzaSyDX4r442JEXhbP8VqFXZDOOFB7PFOzYJmE"; 
         const API_KEY = (typeof apiKey !== 'undefined' && apiKey) ? apiKey : PROVIDED_KEY; 
         
         const MODEL_NAME = "gemini-2.5-flash-preview-09-2025"; 
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
-        // --- System Prompt ---
-        const SYSTEM_PROMPT = `
-        Ти — професійний юридичний радник.
-        
-        ОСНОВНІ ПРАВИЛА:
-        1. ДЖЕРЕЛА: Вся інформація має базуватися ВИКЛЮЧНО на даних з сайту https://zakon.rada.gov.ua/ (закони України, міжнародні договори, декларації, нормативно-правові акти).
-        2. ГРАМАТИКА ТА ПУНКТУАЦІЯ:
-           - Суворо дотримуйся "Українського правопису 2019".
-           - Чітко дотримуйся правил пунктуації української мови.
-           - РЕГІСТР ЛІТЕР: Усі речення починаються з великої літери. Всі інші слова пишуться з малої літери, ОКРІМ власних назв (імена, назви країн, міст, організацій тощо) та особливих назв, що вимагають великої літери за правописом. Не використовуй Title Case у заголовках.
-        3. СТИЛЬ: Професійний, стриманий, зрозумілий.
-        4. ПОШУК: Використовуй Google Search виключно для пошуку релевантних актів на сайті zakon.rada.gov.ua та пошуку офіційних відео-роз'яснень.
-        
-        СТРУКТУРА ВІДПОВІДІ (Markdown):
-        1. **Правовий аналіз:** Чітка відповідь на базі zakon.rada.gov.ua з посиланнями на статті.
-        2. **Схожі ситуації:** Приклади або практика (якщо є на офіційних ресурсах).
-        3. **Медіа-ресурси:** Посилання на відео чи офіційні веб-сторінки з поясненнями (якщо знайдено).
-        4. **План дій:** Покрокова інструкція для громадянина згідно з чинним законодавством.
-        
-        Відповідай українською мовою.
-        `;
+        // --- Internationalization (i18n) ---
+        const TRANSLATIONS = {
+            uk: {
+                title: "Юридичний радник",
+                subtitle: "консультація та допомога",
+                welcomeTitle: "Вітаю! Я ваш юридичний радник.",
+                welcomeText: "Я надаю консультації громадян щодо законодавства, використовуючи виключно офіційну базу <strong>zakon.rada.gov.ua</strong>.",
+                placeholder: "Опишіть вашу ситуацію або запитання...",
+                disclaimer: "Інформація надається виключно для ознайомлення. Перевіряйте дані на <a href='https://zakon.rada.gov.ua' target='_blank' class='underline text-blue-600 hover:text-blue-800 dark:text-blue-400'>zakon.rada.gov.ua</a>",
+                sources: "Використані джерела:",
+                loading: "Шукаю інформацію...",
+                error: "На жаль, сталася помилка. Спробуйте ще раз.",
+                suggestions: [
+                    { text: "📝 декларування за кордоном", query: "Як подати декларацію, якщо я за кордоном?" },
+                    { text: "⚖️ відповідальність за хабар", query: "Яка відповідальність за хабар?" },
+                    { text: "🤝 конфлікт інтересів", query: "Конфлікт інтересів на держслужбі" },
+                    { text: "🕵️ анонімне повідомлення", query: "Як повідомити про корупцію анонімно?" }
+                ],
+                // Modal translations
+                modalTitle: "Видалити історію?",
+                modalBody: "Ви впевнені, що хочете видалити всю історію листування? Цю дію неможливо скасувати.",
+                cancelBtn: "Скасувати",
+                deleteBtn: "Видалити"
+            },
+            en: {
+                title: "Legal Advisor",
+                subtitle: "consultation & assistance",
+                welcomeTitle: "Welcome! I am your Legal Advisor.",
+                welcomeText: "I provide legal consultations based exclusively on the official database <strong>zakon.rada.gov.ua</strong>.",
+                placeholder: "Describe your situation or question...",
+                disclaimer: "Information is for reference only. Verify data at <a href='https://zakon.rada.gov.ua' target='_blank' class='underline text-blue-600 hover:text-blue-800 dark:text-blue-400'>zakon.rada.gov.ua</a>",
+                sources: "Sources used:",
+                loading: "Searching for information...",
+                error: "Sorry, an error occurred. Please try again.",
+                suggestions: [
+                    { text: "📝 declaration abroad", query: "How to file a declaration if I am abroad?" },
+                    { text: "⚖️ bribery liability", query: "What is the liability for bribery?" },
+                    { text: "🤝 conflict of interest", query: "Conflict of interest in civil service" },
+                    { text: "🕵️ anonymous report", query: "How to report corruption anonymously?" }
+                ],
+                // Modal translations
+                modalTitle: "Delete history?",
+                modalBody: "Are you sure you want to delete the entire chat history? This action cannot be undone.",
+                cancelBtn: "Cancel",
+                deleteBtn: "Delete"
+            }
+        };
+
+        // --- State ---
+        let currentLang = localStorage.getItem('lang') || 'uk';
+        let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        let isGenerating = false;
 
         // --- DOM Elements ---
-        const chatContainer = document.getElementById('chat-container');
-        const chatForm = document.getElementById('chat-form');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const themeToggle = document.getElementById('theme-toggle');
-
-        // --- State Management ---
-        let isGenerating = false;
+        const els = {
+            title: document.getElementById('app-title'),
+            subtitle: document.getElementById('app-subtitle'),
+            welcomeScreen: document.getElementById('welcome-screen'),
+            welcomeTitle: document.getElementById('welcome-title'),
+            welcomeText: document.getElementById('welcome-text'),
+            suggestions: document.getElementById('suggestion-buttons'),
+            input: document.getElementById('user-input'),
+            disclaimer: document.getElementById('disclaimer-text'),
+            chatContainer: document.getElementById('chat-container'),
+            form: document.getElementById('chat-form'),
+            sendBtn: document.getElementById('send-btn'),
+            themeToggle: document.getElementById('theme-toggle'),
+            langToggle: document.getElementById('lang-toggle'),
+            clearChatBtn: document.getElementById('clear-chat'),
+            // Modal Elements
+            modal: document.getElementById('confirmation-modal'),
+            modalBackdrop: document.getElementById('modal-backdrop'),
+            modalContent: document.getElementById('modal-content'),
+            modalTitle: document.getElementById('modal-title'),
+            modalText: document.getElementById('modal-text'),
+            modalCancel: document.getElementById('modal-cancel'),
+            modalConfirm: document.getElementById('modal-confirm')
+        };
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            initTheme();
+            updateLanguageUI();
+            renderChatHistory();
             
-            userInput.addEventListener('input', function() {
+            // Auto-resize textarea
+            els.input.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = (this.scrollHeight) + 'px';
                 if(this.value === '') this.style.height = 'auto';
             });
         });
 
-        // --- Theme Toggle ---
-        themeToggle.addEventListener('click', () => {
+        // --- Logic: Language & Theme ---
+        els.themeToggle.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
-            const isDark = document.documentElement.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         });
 
-        // --- Helper: Set Input from Suggestions ---
-        function setInput(text) {
-            userInput.value = text;
-            userInput.focus();
-            userInput.style.height = 'auto'; 
+        els.langToggle.addEventListener('click', () => {
+            currentLang = currentLang === 'uk' ? 'en' : 'uk';
+            localStorage.setItem('lang', currentLang);
+            updateLanguageUI();
+        });
+
+        // --- COOL MODAL LOGIC ---
+        function openModal() {
+            els.modal.classList.remove('hidden');
+            // Trigger animation
+            setTimeout(() => {
+                els.modalBackdrop.classList.remove('opacity-0');
+                els.modalContent.classList.remove('scale-95', 'opacity-0');
+                els.modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
         }
 
-        // --- Chat Logic ---
-        chatForm.addEventListener('submit', async (e) => {
+        function closeModal() {
+            els.modalBackdrop.classList.add('opacity-0');
+            els.modalContent.classList.remove('scale-100', 'opacity-100');
+            els.modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                els.modal.classList.add('hidden');
+            }, 300); // match transition duration
+        }
+
+        els.clearChatBtn.addEventListener('click', () => {
+            // Update modal text based on current language
+            const t = TRANSLATIONS[currentLang];
+            els.modalTitle.innerText = t.modalTitle;
+            els.modalText.innerText = t.modalBody;
+            els.modalCancel.innerText = t.cancelBtn;
+            els.modalConfirm.innerText = t.deleteBtn;
+            
+            openModal();
+        });
+
+        els.modalCancel.addEventListener('click', closeModal);
+        els.modalBackdrop.addEventListener('click', closeModal);
+
+        els.modalConfirm.addEventListener('click', () => {
+            localStorage.removeItem('chatHistory');
+            chatHistory = [];
+            
+            // Remove chat messages
+            const messages = els.chatContainer.querySelectorAll('.chat-message');
+            messages.forEach(msg => msg.remove());
+
+            // Show welcome screen
+            els.welcomeScreen.classList.remove('hidden');
+            
+            closeModal();
+        });
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        function updateLanguageUI() {
+            const t = TRANSLATIONS[currentLang];
+            
+            // Text updates
+            els.title.innerText = t.title;
+            els.subtitle.innerText = t.subtitle;
+            els.welcomeTitle.innerText = t.welcomeTitle;
+            els.welcomeText.innerHTML = t.welcomeText;
+            els.input.placeholder = t.placeholder;
+            els.disclaimer.innerHTML = t.disclaimer;
+            
+            // VISUAL FIX: Display UA instead of UK (United Kingdom) when language is Ukrainian
+            els.langToggle.innerText = currentLang === 'uk' ? 'UA' : 'EN';
+
+            // Suggestion Buttons
+            els.suggestions.innerHTML = '';
+            t.suggestions.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = "text-left text-xs p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-600 dark:text-gray-300 transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-800";
+                btn.innerText = s.text;
+                btn.onclick = () => setInput(s.query);
+                els.suggestions.appendChild(btn);
+            });
+        }
+
+        function renderChatHistory() {
+            // Remove previous chat messages (keep welcome screen if exists in DOM)
+            const messages = els.chatContainer.querySelectorAll('.chat-message');
+            messages.forEach(m => m.remove());
+
+            if (chatHistory.length === 0) {
+                els.welcomeScreen.classList.remove('hidden');
+            } else {
+                els.welcomeScreen.classList.add('hidden');
+                chatHistory.forEach(msg => {
+                    appendMessageToDOM(msg.text, msg.sender, msg.grounding, false); // false = don't save again
+                });
+                setTimeout(scrollToBottom, 100);
+            }
+        }
+
+        // --- Logic: Chat ---
+        function setInput(text) {
+            els.input.value = text;
+            els.input.focus();
+            els.input.style.height = 'auto'; 
+        }
+
+        els.form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const message = userInput.value.trim();
+            const message = els.input.value.trim();
             if (!message || isGenerating) return;
 
-            addMessage(message, 'user');
-            userInput.value = '';
-            userInput.style.height = 'auto';
-            isGenerating = true;
-            sendBtn.disabled = true;
+            // Hide welcome screen on first message
+            els.welcomeScreen.classList.add('hidden');
 
+            // 1. User Message
+            appendMessageToDOM(message, 'user', null, true);
+            els.input.value = '';
+            els.input.style.height = 'auto';
+            
+            isGenerating = true;
+            els.sendBtn.disabled = true;
             const loadingId = addLoadingIndicator();
 
             try {
+                // 2. API Call
                 const responseData = await fetchGemini(message);
                 removeMessage(loadingId);
 
@@ -285,28 +448,33 @@
                 const grounding = responseData.candidates?.[0]?.groundingMetadata;
 
                 if (aiText) {
-                    addMessage(aiText, 'ai', grounding);
+                    appendMessageToDOM(aiText, 'ai', grounding, true);
                 } else {
-                    addMessage("На жаль, я не зміг сформувати відповідь. Спробуйте уточнити запитання.", 'ai');
+                    appendMessageToDOM(TRANSLATIONS[currentLang].error, 'ai', null, false);
                 }
 
             } catch (error) {
                 removeMessage(loadingId);
                 console.error(error);
-                addMessage(`⚠️ **Помилка:** ${error.message || "Не вдалося з'єднатися з сервером."}`, 'ai');
+                appendMessageToDOM(`⚠️ Error: ${error.message}`, 'ai', null, false);
             } finally {
                 isGenerating = false;
-                sendBtn.disabled = false;
-                userInput.focus();
+                els.sendBtn.disabled = false;
+                els.input.focus();
             }
         });
 
         // --- API Function ---
         async function fetchGemini(prompt) {
+            // Dynamic System Prompt based on Language
+            const sysPromptText = currentLang === 'uk' 
+                ? `Ти — професійний юридичний радник. Базуйся ВИКЛЮЧНО на законодавстві України (zakon.rada.gov.ua). Відповідай українською мовою. Структура: Правовий аналіз, План дій.`
+                : `You are a professional legal advisor for Ukrainian law. Base your answers EXCLUSIVELY on Ukrainian legislation (zakon.rada.gov.ua). Reply in ENGLISH. Structure: Legal Analysis, Action Plan.`;
+
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                tools: [{ google_search: {} }],
-                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+                tools: [{ google_search: {} }], // Enable Grounding
+                systemInstruction: { parts: [{ text: sysPromptText }] }
             };
 
             const response = await fetch(API_URL, {
@@ -317,33 +485,33 @@
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(`API Error: ${response.status} - ${errText}`);
+                throw new Error(`API Error: ${response.status}`);
             }
 
             return await response.json();
         }
 
-        // --- UI Functions ---
-        function addMessage(text, sender, groundingData = null) {
+        // --- DOM Manipulation Helpers ---
+        function appendMessageToDOM(text, sender, groundingData = null, saveToHistory = true) {
             const div = document.createElement('div');
-            div.className = 'flex flex-col space-y-2 max-w-3xl mx-auto animate-fade-in-up mb-6';
+            div.className = 'chat-message flex flex-col space-y-2 max-w-3xl mx-auto animate-fade-in-up mb-6';
             
             const isUser = sender === 'user';
             
             const contentContainer = document.createElement('div');
             contentContainer.className = `flex items-end gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`;
 
-            // Avatar Logic
+            // Avatar
             const avatar = document.createElement('div');
             avatar.className = `w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 p-1.5 ${isUser ? 'bg-indigo-600' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`;
             
             if (isUser) {
                 avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>`;
             } else {
-                // Use the main SVG icon for the bot avatar
                 avatar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>`;
             }
 
+            // Bubble
             const bubble = document.createElement('div');
             bubble.className = `
                 p-5 shadow-sm max-w-[90%] md:max-w-[85%] overflow-hidden
@@ -359,31 +527,34 @@
                 const cleanHtml = DOMPurify.sanitize(rawHtml);
                 bubble.innerHTML = `<div class="prose dark:prose-invert max-w-none text-sm leading-relaxed">${cleanHtml}</div>`;
                 
-                if (groundingData && groundingData.groundingAttributions && groundingData.groundingAttributions.length > 0) {
-                    const sourcesHtml = generateSourcesHtml(groundingData.groundingAttributions);
-                    bubble.innerHTML += sourcesHtml;
+                if (groundingData && groundingData.groundingAttributions?.length > 0) {
+                    bubble.innerHTML += generateSourcesHtml(groundingData.groundingAttributions);
                 }
             }
 
             contentContainer.appendChild(avatar);
             contentContainer.appendChild(bubble);
             div.appendChild(contentContainer);
-            chatContainer.appendChild(div);
+            els.chatContainer.appendChild(div);
             
             scrollToBottom();
-            return div.id;
+
+            // Persistence
+            if (saveToHistory) {
+                chatHistory.push({ text, sender, grounding: groundingData });
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            }
         }
 
         function generateSourcesHtml(attributions) {
             let html = `<div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">`;
             html += `<p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                Використані джерела:
+                ${TRANSLATIONS[currentLang].sources}
             </p>`;
             html += `<div class="flex flex-wrap gap-2">`;
             
             const seenUrls = new Set();
-            
             attributions.forEach(attr => {
                 if (attr.web && attr.web.uri && attr.web.title && !seenUrls.has(attr.web.uri)) {
                     seenUrls.add(attr.web.uri);
@@ -397,7 +568,6 @@
                     `;
                 }
             });
-            
             html += `</div></div>`;
             return html;
         }
@@ -406,7 +576,7 @@
             const id = 'loading-' + Date.now();
             const div = document.createElement('div');
             div.id = id;
-            div.className = 'flex flex-col space-y-2 max-w-3xl mx-auto animate-fade-in-up mb-6';
+            div.className = 'chat-message flex flex-col space-y-2 max-w-3xl mx-auto animate-fade-in-up mb-6';
             div.innerHTML = `
                 <div class="flex items-end gap-3">
                     <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 p-1.5 text-blue-600 dark:text-blue-400">
@@ -416,11 +586,11 @@
                         <span class="w-2 h-2 bg-blue-500 rounded-full typing-dot"></span>
                         <span class="w-2 h-2 bg-blue-500 rounded-full typing-dot"></span>
                         <span class="w-2 h-2 bg-blue-500 rounded-full typing-dot"></span>
-                        <span class="ml-2 text-xs text-gray-400">Шукаю інформацію...</span>
+                        <span class="ml-2 text-xs text-gray-400">${TRANSLATIONS[currentLang].loading}</span>
                     </div>
                 </div>
             `;
-            chatContainer.appendChild(div);
+            els.chatContainer.appendChild(div);
             scrollToBottom();
             return id;
         }
@@ -431,18 +601,16 @@
         }
 
         function scrollToBottom() {
-            setTimeout(() => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 50);
+            els.chatContainer.scrollTop = els.chatContainer.scrollHeight;
         }
 
-        userInput.addEventListener('keydown', (e) => {
+        // Handle Enter key
+        els.input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                chatForm.dispatchEvent(new Event('submit'));
+                els.form.dispatchEvent(new Event('submit'));
             }
         });
-
     </script>
 </body>
 </html>
